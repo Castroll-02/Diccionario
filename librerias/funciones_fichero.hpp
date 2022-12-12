@@ -1,31 +1,29 @@
 // Funcion para crear el fichero donde se almacenaran los registros (archivo txt)
-void crearFichero()
+void crearFichero(ofstream &fichero)
 {
-    // Creamos un objeto de la clase ofstream 
-    ofstream archivo;
     // Creamos variable donde almacenaremos todo el contenido de fichero
     string texto;
     // Abrimos el fichero con el objeto creado anteriormente y enviamos de parametro el nombre del txt
-    archivo.open("registros.txt", ios::out);
+    fichero.open("registros.txt", ios::out);
     // Validamos que no haya fallado abrir el archivo
-    if (archivo.fail())
+    if (fichero.fail())
     {
         // En caso de fallar mostrarmos el siguiente mensaje y detenemos la ejecucion del programa
         cout << "No se pudo crear el archivo, deteniendo programa......";
         exit(1);
     }
-    // Cerramos el fichero 
-    archivo.close();
+    // Finalizamos la conexion con el fichero
+    fichero.close();
 }
 
 // Funcion para agregar un registro dentro del fichero con un puntero tipo string (arreglo) de parametro
-void agregarRegistro(string *datos)
+void agregarRegistro(Palabra &objeto)
 {
-    // Creamos un objeto de la clase ofstream 
+    // Creamos un objeto de la clase ofstream
     ofstream archivo;
     // Creamos una variable para almacenar la cadena que contendra que contendra el registro
     string registro;
-    // Abrimos el fichero con el objeto archivo 
+    // Abrimos el fichero con el objeto archivo
     archivo.open("registros.txt", ios::app);
     // Validamos que no haya fallado abrir el archivo
     if (archivo.fail())
@@ -35,7 +33,7 @@ void agregarRegistro(string *datos)
         exit(1);
     }
     // Concatenamos los daots utilizando caracteres especiales para facilitar su identificacion al realizar la lectura
-    registro = datos[0] + "?" + datos[1] + "&" + datos[2] + "%" + datos[3] + "$" + datos[4] + "#";
+    registro = objeto.getLetra() + "?" + objeto.getPalabra() + "&" + objeto.getSignificado() + "%" + objeto.getSinonimo() + "$" + objeto.getAntonimo() + "#";
     // Imprimimos el registro dentro del fichero
     archivo << registro;
     // Cerramos el fichero
@@ -43,44 +41,41 @@ void agregarRegistro(string *datos)
 }
 
 // Funcion para actualizar los registros dentro del fichero en base a la lista del programa
-void actualizarFichero(Nodo *lista){
+void actualizarFichero(Nodo *lista, ofstream &fichero)
+{
     // Reseteamos el contenido del fichero
-    crearFichero();
+    crearFichero(fichero);
     // Arreglo donde guardaremos los datos de cada nodo cargado de la lista
-    string datos[5];
+    Palabra objeto = Palabra();
     // Creamos un nodo auxiliar para recorrer la lista
-    Nodo * actual = new Nodo();
+    Nodo *actual = new Nodo();
     actual = lista;
     // Recorremos el contenido actualizado de la lista y lo agregamos al fichero
     while (actual != NULL)
     {
-        // Obtenemos los valores de los atributos del nodo
-        datos[0] = actual->letra;
-        datos[1] = actual->palabra;
-        datos[2] = actual->significado;
-        datos[3] = actual->sinonimo;
-        datos[4] = actual->antonimo;
+        // Almacenamos los valores de los atributos del nodo en los atributos de la clase Palabra
+        objeto.setLetra(actual->letra);
+        objeto.setPalabra(actual->palabra);
+        objeto.setSignificado(actual->significado);
+        objeto.setSinonimo(actual->sinonimo);
+        objeto.setAntonimo(actual->antonimo);
         actual = actual->siguiente;
-        // Enviamos nodo por nodo a la funcion para agregar los nodos en el fichero (txt)
-        agregarRegistro(datos);
+        // Enviamos el objeto con los atributos llenos a la funcion para agregar los datos en el fichero (txt)
+        agregarRegistro(objeto);
     }
-    // Mostramos mensaje de exito
-    cout << "Fichero actualizado correctamente" << endl;
 }
 
 // Funcion para cargar todos los registros del fichero (txt)
-bool cargarRegistros()
+bool cargarRegistros(ifstream& fichero)
 {
     // Declaramos variable que contendra el valor si se ejecuto o no la funcion
     bool retorno;
-    // Creamos objeto de la clase ifstream
-    ifstream archivo;
     // Creamos la cadena en la que guardaremos todo el contenido del fichero
     string cadenaDatos;
     // Utilizamos el objeto archivo para abrir el fichero
-    archivo.open("registros.txt", ios::in);
+    fichero.open("registros.txt", ios::in);
     // Validamos que el archivo no haya tenido errores al cargar
-    if (archivo.fail())
+    if (fichero.fail())
     {
         // Mostramos mensaje de error y salimos del programa
         cout << "No se pudo abrir el archivo";
@@ -88,14 +83,16 @@ bool cargarRegistros()
     }
     else
     {
-        // Mientras el archivo no tenga errores ejecutaremos
-        while (!archivo.eof())
+        // Mientras no se haya llegado al final del archivo
+        while (!fichero.eof())
         {
-            // Creamos el arreglo donde iremos guardando los datos que leamos del fichero
-            string datos[5];
+            // Creamos el objeto de la clase Palabra
+            Palabra objeto = Palabra();
+            // Creamos variable auxiliar para almacenar cada palabra (String)
+            string aux;
             // Ingresamos todo el contenido del arreglo dentro de la variable cadenaDatos
-            getline(archivo, cadenaDatos);
-            // Creamos variables auxiliares para posicionarnos dentro de arreglos 
+            getline(fichero, cadenaDatos);
+            // Creamos variables auxiliares para posicionarnos dentro de arreglos
             int longitud, posicion = 0;
             // Obtenemos el numero de caracteres que posee la cadena de datos
             longitud = cadenaDatos.length();
@@ -104,95 +101,106 @@ bool cargarRegistros()
             {
                 // Obtenemos el caracter actual y lo guardamos en actual (tipo char)
                 char actual = cadenaDatos[i];
-                // Creamos un switch para ir asignando los strings dentro del arreglo datos segun posicion 
+                // Creamos un switch para ir asignando los strings dentro del arreglo datos segun posicion
                 switch (posicion)
                 {
-                // Posicion cadenaDatos[0] correspondiente al string letra
+                // String letra
                 case 0:
                     // El ? define el fin del string letra
                     if (actual == '?')
                     {
-                        // Pasamos a la siguiente posicion del arreglo datos[]
+                        // Asignamos el valor del string letra
+                        objeto.setLetra(aux);
+                        // Borramos el contenido del auxiliar
+                        aux = "";
+                        // Pasamos al siguiente string (palabra)
                         posicion = 1;
                     }
                     else
                     {
-                        // Asignamos el valor del string letra
-                        datos[0] = actual;
+                        aux = actual;
                     }
                     break;
-                // Posicion cadenaDatos[1] correspondiente al string palabra
+                // String palabra
                 case 1:
                     // El & define el fin del string palabra
                     if (actual == '&')
                     {
-                        // Pasamos a la siguiente posicion del arreglo datos[]
+                        // Asignamos el valor del string palabra
+                        objeto.setPalabra(aux);
+                        // Borramos el contenido del auxiliar
+                        aux = "";
+                        // Pasamos al siguiente string (significado)
                         posicion = 2;
                     }
                     else
                     {
-                        // Vamos agregando los caracteres para formar el string 
-                        datos[1] = datos[1] + actual;
+                        // Vamos agregando los caracteres para formar el string
+                        aux = aux + actual;
                     }
                     break;
-                // Posicion cadenaDatos[2] correspondiente al string letra
+                // String letra
                 case 2:
                     // El % define el fin del string significado
                     if (actual == '%')
                     {
-                        // Pasamos a la siguiente posicion del arreglo datos[]
+                        // Asignamos el valor del string significado
+                        objeto.setSignificado(aux);
+                        // Borramos el contenido del auxiliar
+                        aux = "";
+                        // Pasamos al siguiente string (sinonimo)
                         posicion = 3;
                     }
                     else
                     {
-                        // Vamos agregando los caracteres para formar el string 
-                        datos[2] = datos[2] + actual;
+                        // Vamos agregando los caracteres para formar el string
+                        aux = aux + actual;
                     }
                     break;
-                // Posicion cadenaDatos[3] correspondiente al string sinonimo
+                // String sinonimo
                 case 3:
                     // El $ define el fin del string sinonimo
                     if (actual == '$')
                     {
-                        // Pasamos a la siguiente posicion del arreglo datos[]
+                        // Asignamos el valor del string sinonimo
+                        objeto.setSinonimo(aux);
+                        // Borramos el contenido del auxiliar
+                        aux = "";
+                        // Pasamos al siguiente string (antonimo)
                         posicion = 4;
                     }
                     else
                     {
-                        // Vamos agregando los caracteres para formar el string 
-                        datos[3] = datos[3] + actual;
+                        // Vamos agregando los caracteres para formar el string
+                        aux = aux + actual;
                     }
                     break;
-                // Posicion cadenaDatos[4] correspondiente al string antonimo
+                // String antonimo
                 case 4:
                     // El # define el fin del string antonimo
                     if (actual == '#')
                     {
-                        // Creamos un nodo mediante el arreglo obtenido para restaurar el contenido de la lista                     
-                        agregarPalabra(lista,datos);
-                        // Recorremos el arreglo datos
-                        for (int i = 0; i < 5; i++)
-                        {
-                            // Vaciamos el contenido de cada posicion del arreglo datos
-                            datos[i] = "";
-                        }
-                        // Regresamos a la primera posicion 
+                        // Asignamos el valor del string antonimo
+                        objeto.setAntonimo(aux);
+                        // Borramos el contenido del auxiliar
+                        aux = "";
+                        // Creamos un nodo mediante el arreglo obtenido para restaurar el contenido de la lista
+                        agregarPalabra(lista, objeto);
+                        // Regresamos a la primera posicion
                         posicion = 0;
                     }
                     else
                     {
-                        // Vamos agregando los caracteres para formar el string 
-                        datos[4] = datos[4] + actual;
+                        // Vamos agregando los caracteres para formar el string
+                        aux = aux + actual;
                     }
                     break;
                 }
             }
         }
-        // Mostramos mensaje de confirmacion
-        cout << "Datos restaurados correctamente del fichero....." << endl;
         retorno = true;
-    } 
-    // Cerramos la conexion con el fichero
-    archivo.close();
+    }
+    // Finalizamos la conexion con el fichero
+    fichero.close();
     return retorno;
 }

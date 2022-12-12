@@ -1,17 +1,8 @@
-#include <iostream>
-#include <conio.h>
-#include <stdlib.h>
-#include <fstream>
-#include <cstring>
-
-using namespace std;
-
-#include "validaciones.cpp"
-#include "funciones.cpp"
-#include "funciones_fichero.cpp"
+#include "librerias/clase.hpp"                                                                                                                            
 
 int main()
 {
     menu();
     return 0;
 }
+
